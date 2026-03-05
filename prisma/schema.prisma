@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String?
+  hashedPassword String
+  role           String   @default("operator") // "admin" or "operator"
+  signature      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  capitalCallRequests CapitalCallRequest[]
+}
+
+model Fund {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  legalName       String?
+  defaultCurrency String   @default("USD")
+  status          String   @default("active") // "active" or "inactive"
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  wireInstructions    WireInstruction[]
+  capitalCallRequests CapitalCallRequest[]
+  contacts            Contact[]
+}
+
+model WireInstruction {
+  id                    String    @id @default(uuid())
+  fundId                String
+  label                 String
+  beneficiaryName       String
+  beneficiaryAddress    String?
+  bankName              String
+  bankAddress           String?
+  abaRouting            String?
+  accountNumber         String?
+  swift                 String?
+  iban                  String?
+  forFurtherCredit      String?
+  referenceInstructions String?
+  remittanceEmail       String?
+  effectiveDate         DateTime?
+  isActive              Boolean   @default(true)
+  verificationStatus    String    @default("unverified")
+  lastVerifiedAt        DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  fund                Fund                 @relation(fields: [fundId], references: [id])
+  capitalCallRequests CapitalCallRequest[]
+
+  @@index([fundId])
+}
+
+model CapitalCallRequest {
+  id                  String   @id @default(uuid())
+  fundId              String
+  wireInstructionId   String
+  investorEntityName  String?
+  capitalCallNumber   String
+  amount              Float
+  currency            String   @default("USD")
+  dueDate             DateTime
+  memoOverride        String?
+  ccList              String?
+  toRecipient         String?
+  subjectRendered     String
+  bodyRenderedPlain   String
+  bodyRenderedHtml    String?
+  wireSnapshot        String?
+  createdByUserId     String
+  createdAt           DateTime @default(now())
+
+  fund            Fund            @relation(fields: [fundId], references: [id])
+  wireInstruction WireInstruction @relation(fields: [wireInstructionId], references: [id])
+  createdBy       User            @relation(fields: [createdByUserId], references: [id])
+
+  @@index([fundId])
+  @@index([createdByUserId])
+}
+
+model Contact {
+  id     String @id @default(uuid())
+  fundId String
+  name   String
+  email  String
+  type   String @default("admin")
+
+  fund Fund @relation(fields: [fundId], references: [id])
+
+  @@index([fundId])
+}
