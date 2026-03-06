@@ -312,6 +312,20 @@ export default function GeneratePage() {
         {/* Preview */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Preview</h2>
+          {(() => {
+            const missing: string[] = [];
+            if (!selectedFund) missing.push("Fund");
+            if (!selectedWire) missing.push("Wire Instruction");
+            if (!amount) missing.push("Amount");
+            if (!dueDate) missing.push("Due Date");
+            if (!callNumber) missing.push("Capital Call #");
+            return missing.length > 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-sm space-y-2">
+                <p className="text-gray-500">Fill in the required fields to generate the email:</p>
+                <p className="text-red-500 font-medium">{missing.join(", ")}</p>
+              </div>
+            ) : null;
+          })()}
           {preview ? (
             <>
               <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -342,11 +356,7 @@ export default function GeneratePage() {
                 <CopyButton text={preview.html} label="Copy HTML" />
               </div>
             </>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500 text-sm">
-              Fill in the required fields to see a preview
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
