@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Kid {
+  id        String   @id @default(uuid())
+  name      String
+  emoji     String   @default("🙂")
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  purchases Purchase[]
+}
+
+model Purchase {
+  id          String   @id @default(uuid())
+  kidId       String
+  merchant    String
+  description String?
+  amount      Float
+  category    String
+  source      String   @default("manual") // "manual" or "applepay"
+  purchasedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  kid Kid @relation(fields: [kidId], references: [id], onDelete: Cascade)
+
+  @@index([kidId])
+  @@index([category])
+  @@index([purchasedAt])
+}

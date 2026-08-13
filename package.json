@@ -1,0 +1,28 @@
+{
+  "name": "kids-spending-tracker",
+  "version": "1.0.0",
+  "description": "Spending accountability app for the kids — log purchases, auto-categorize, export to spreadsheet",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && prisma db push && next build",
+    "postinstall": "prisma generate",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.2",
+    "@types/node": "^25.3.3",
+    "@types/react": "^19.2.14",
+    "next": "^16.1.6",
+    "prisma": "^6.19.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1"
+  }
+}
