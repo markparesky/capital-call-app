@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
       where: { kidId: kid.id },
       orderBy: { purchasedAt: "desc" },
       take: 100,
+      include: { refundedBy: { select: { amount: true } } },
     });
     return NextResponse.json({ kid: { name: kid.name, emoji: kid.emoji }, purchases });
   }
@@ -45,11 +46,53 @@ export async function GET(request: NextRequest) {
 
 // POST: log a purchase. Authenticated by kid token — no login needed on the
 // kid's phone. Auto-categorizes when no category is provided.
+// With `returnOf: <purchaseId>`, logs a return instead: a negative-amount
+// entry linked to the original, capped at what hasn't been refunded yet.
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const token = (body.token || "").trim();
   const kid = await prisma.kid.findUnique({ where: { token } });
   if (!kid) return NextResponse.json({ error: "Unknown link" }, { status: 404 });
+
+  if (body.returnOf) {
+    const original = await prisma.purchase.findUnique({
+      where: { id: String(body.returnOf) },
+      include: { refundedBy: { select: { amount: true } } },
+    });
+    if (!original || original.kidId !== kid.id) {
+      return NextResponse.json({ error: "Original purchase not found" }, { status: 404 });
+    }
+    if (original.refundsId) {
+      return NextResponse.json({ error: "Can't return a return" }, { status: 400 });
+    }
+    const alreadyRefunded = original.refundedBy.reduce((s, r) => s + -r.amount, 0);
+    const remaining = Math.round((original.amount - alreadyRefunded) * 100) / 100;
+    const refund =
+      body.amount != null && body.amount !== ""
+        ? Math.round(parseFloat(body.amount) * 100) / 100
+        : remaining;
+    if (!isFinite(refund) || refund <= 0) {
+      return NextResponse.json({ error: "Enter a valid refund amount" }, { status: 400 });
+    }
+    if (refund > remaining + 0.005) {
+      return NextResponse.json(
+        { error: `Only $${remaining.toFixed(2)} is left to refund on this purchase` },
+        { status: 400 }
+      );
+    }
+    const ret = await prisma.purchase.create({
+      data: {
+        kidId: kid.id,
+        merchant: original.merchant,
+        description: original.description ? `Return: ${original.description}` : "Return",
+        amount: -refund,
+        category: original.category,
+        source: "return",
+        refundsId: original.id,
+      },
+    });
+    return NextResponse.json(ret);
+  }
 
   const merchant = (body.merchant || "").trim();
   const entered = Math.round(parseFloat(body.amount) * 100) / 100;

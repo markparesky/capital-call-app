@@ -26,9 +26,14 @@ model Purchase {
   originalAmount   Float? // set when paid in a foreign currency
   originalCurrency String?
   category    String
-  source      String   @default("manual") // "manual" or "applepay"
+  source      String   @default("manual") // "manual", "applepay", or "return"
   purchasedAt DateTime @default(now())
   createdAt   DateTime @default(now())
+
+  // A return is a negative-amount purchase linked to the original.
+  refundsId  String?
+  refunds    Purchase?  @relation("PurchaseRefund", fields: [refundsId], references: [id], onDelete: SetNull)
+  refundedBy Purchase[] @relation("PurchaseRefund")
 
   kid Kid @relation(fields: [kidId], references: [id], onDelete: Cascade)
 

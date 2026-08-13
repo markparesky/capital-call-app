@@ -40,7 +40,8 @@ export async function PATCH(
     if (!isFinite(amount) || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
-    data.amount = amount;
+    // Returns are stored negative; edits are entered as positive numbers.
+    data.amount = purchase.refundsId ? -amount : amount;
   }
 
   const updated = await prisma.purchase.update({ where: { id }, data });

@@ -423,6 +423,11 @@ export default function ParentPage() {
                       Pay
                     </span>
                   )}
+                  {p.source === "return" && (
+                    <span className="ml-1.5 px-1.5 py-0.5 bg-green-100 rounded text-xs text-green-700">
+                      ↩ Return
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   {p.kid.emoji} {p.kid.name}
@@ -443,7 +448,9 @@ export default function ParentPage() {
                   </select>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="font-medium">${p.amount.toFixed(2)}</span>
+                  <span className={p.amount < 0 ? "font-medium text-green-600" : "font-medium"}>
+                    {p.amount < 0 ? `−$${(-p.amount).toFixed(2)}` : `$${p.amount.toFixed(2)}`}
+                  </span>
                   {p.originalCurrency && p.originalAmount != null && (
                     <span className="block text-xs text-gray-400">
                       {formatOriginal(p.originalAmount, p.originalCurrency)}

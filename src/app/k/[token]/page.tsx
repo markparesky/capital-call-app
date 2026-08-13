@@ -14,6 +14,8 @@ interface Purchase {
   originalCurrency: string | null;
   category: string;
   source: string;
+  refundsId: string | null;
+  refundedBy?: { amount: number }[];
   purchasedAt: string;
   createdAt: string;
 }
@@ -57,6 +59,9 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
   const [manualCategory, setManualCategory] = useState<Category | null>(null);
   const [saving, setSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [returningId, setReturningId] = useState<string | null>(null);
+  const [returnAmount, setReturnAmount] = useState("");
+  const [returnError, setReturnError] = useState("");
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState("");
   const amountRef = useRef<HTMLInputElement>(null);
@@ -154,6 +159,22 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
       setScanning(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const submitReturn = async (p: Purchase) => {
+    setReturnError("");
+    const res = await fetch("/api/spend/purchases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, returnOf: p.id, amount: returnAmount }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setReturnError(data.error || "Couldn't log the return — try again");
+      return;
+    }
+    setReturningId(null);
+    load();
   };
 
   const remove = async (id: string) => {
@@ -316,44 +337,99 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
         <ul className="divide-y divide-gray-100">
           {purchases.slice(0, 20).map((p) => {
             const deletable = Date.now() - new Date(p.createdAt).getTime() < KID_EDIT_WINDOW_MS;
+            const isReturn = !!p.refundsId;
+            const refunded = (p.refundedBy || []).reduce((s, r) => s + -r.amount, 0);
+            const remaining = Math.round((p.amount - refunded) * 100) / 100;
+            const canReturn = !isReturn && remaining > 0.005;
             return (
-              <li key={p.id} className="py-2.5 flex items-center gap-3">
-                <span className="text-xl">{CATEGORY_EMOJI[p.category as Category] || "❓"}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {p.merchant}
-                    {p.description && (
-                      <span className="text-gray-400 font-normal"> · {p.description}</span>
+              <li key={p.id} className="py-2.5">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">
+                    {isReturn ? "↩️" : CATEGORY_EMOJI[p.category as Category] || "❓"}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {p.merchant}
+                      {p.description && (
+                        <span className="text-gray-400 font-normal"> · {p.description}</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(p.purchasedAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                      {p.source === "applepay" && "  Apple Pay"}
+                      {refunded > 0 && (
+                        <span className="text-green-600"> · ↩ ${refunded.toFixed(2)} returned</span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-right">
+                    {isReturn ? (
+                      <span className="text-sm font-semibold text-green-600">
+                        +${(-p.amount).toFixed(2)} back
+                      </span>
+                    ) : (
+                      <span className="text-sm font-semibold">${p.amount.toFixed(2)}</span>
                     )}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {new Date(p.purchasedAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                    {p.source === "applepay" && "  Apple Pay"}
-                  </div>
-                </div>
-                <span className="text-right">
-                  <span className="text-sm font-semibold">${p.amount.toFixed(2)}</span>
-                  {p.originalCurrency && p.originalAmount != null && (
-                    <span className="block text-xs text-gray-400">
-                      {formatOriginal(p.originalAmount, p.originalCurrency)}
-                    </span>
+                    {p.originalCurrency && p.originalAmount != null && (
+                      <span className="block text-xs text-gray-400">
+                        {formatOriginal(p.originalAmount, p.originalCurrency)}
+                      </span>
+                    )}
+                  </span>
+                  {canReturn && (
+                    <button
+                      onClick={() => {
+                        setReturnError("");
+                        setReturningId(returningId === p.id ? null : p.id);
+                        setReturnAmount(remaining.toFixed(2));
+                      }}
+                      className="text-gray-300 hover:text-green-600 text-base px-1"
+                      title="Returned this? Log the refund"
+                    >
+                      ↩
+                    </button>
                   )}
-                </span>
-                {deletable && (
-                  <button
-                    onClick={() => remove(p.id)}
-                    className="text-gray-300 hover:text-red-500 text-lg px-1"
-                    title="Delete (only works for the first hour)"
-                  >
-                    ×
-                  </button>
+                  {deletable && (
+                    <button
+                      onClick={() => remove(p.id)}
+                      className="text-gray-300 hover:text-red-500 text-lg px-1"
+                      title="Delete (only works for the first hour)"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                {returningId === p.id && (
+                  <div className="mt-2 ml-9 flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Refund $</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={returnAmount}
+                      onChange={(e) => setReturnAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                      className="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                    <button
+                      onClick={() => submitReturn(p)}
+                      className="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700"
+                    >
+                      Log return
+                    </button>
+                    <button
+                      onClick={() => setReturningId(null)}
+                      className="text-gray-400 hover:text-gray-600 text-sm px-1"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 )}
               </li>
             );
           })}
+          {returnError && <li className="py-2 text-sm text-red-600">{returnError}</li>}
           {purchases.length === 0 && (
             <li className="py-6 text-center text-sm text-gray-400">Nothing logged yet</li>
           )}

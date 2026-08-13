@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         p.originalCurrency && p.originalAmount != null
           ? q(formatOriginal(p.originalAmount, p.originalCurrency))
           : "",
-        p.source === "applepay" ? "Apple Pay" : "Manual",
+        p.source === "applepay" ? "Apple Pay" : p.source === "return" ? "Return" : "Manual",
       ].join(",");
     }),
   ].join("\n");
