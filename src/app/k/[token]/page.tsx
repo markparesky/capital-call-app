@@ -3,12 +3,15 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CATEGORIES, CATEGORY_EMOJI, categorize, type Category } from "@/lib/categorize";
+import { CURRENCIES, formatOriginal, isCurrency, type CurrencyCode } from "@/lib/currency";
 
 interface Purchase {
   id: string;
   merchant: string;
   description: string | null;
   amount: number;
+  originalAmount: number | null;
+  originalCurrency: string | null;
   category: string;
   source: string;
   purchasedAt: string;
@@ -48,6 +51,7 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
   const [purchases, setPurchases] = useState<Purchase[]>([]);
 
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState<CurrencyCode>("USD");
   const [merchant, setMerchant] = useState("");
   const [item, setItem] = useState("");
   const [manualCategory, setManualCategory] = useState<Category | null>(null);
@@ -74,6 +78,17 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
     load();
   }, [load]);
 
+  // Remember the currency choice per device — a kid traveling abroad picks it
+  // once and their phone stays on it.
+  useEffect(() => {
+    const saved = localStorage.getItem("spend_currency");
+    if (saved && isCurrency(saved)) setCurrency(saved);
+  }, []);
+  const pickCurrency = (code: CurrencyCode) => {
+    setCurrency(code);
+    localStorage.setItem("spend_currency", code);
+  };
+
   const autoCategory = useMemo(
     () =>
       merchant.trim() || item.trim() ? categorize(`${merchant} ${item}`) : null,
@@ -93,6 +108,7 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
         merchant,
         description: item,
         amount,
+        currency,
         category: manualCategory || undefined,
       }),
     });
@@ -130,6 +146,7 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
       if (data.amount != null) setAmount(data.amount.toFixed(2));
       if (data.merchant) setMerchant(data.merchant);
       if (data.item) setItem(data.item);
+      if (isCurrency(data.currency)) setCurrency(data.currency);
       setManualCategory(null);
     } catch {
       setError("Couldn't read that image — try typing it in");
@@ -193,8 +210,19 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
 
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">How much?</label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-gray-400">$</span>
+          <div className="flex gap-2">
+            <select
+              value={currency}
+              onChange={(e) => pickCurrency(e.target.value as CurrencyCode)}
+              className="px-2 py-3 text-lg font-semibold border border-gray-300 rounded-xl bg-gray-50 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Currency"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
             <input
               ref={amountRef}
               type="text"
@@ -202,10 +230,15 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-              className="w-full pl-10 pr-4 py-3 text-2xl font-semibold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 min-w-0 px-4 py-3 text-2xl font-semibold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
+          {currency !== "USD" && (
+            <p className="text-xs text-gray-400 mt-1">
+              Converted to US dollars automatically when you log it
+            </p>
+          )}
         </div>
 
         <div>
@@ -301,7 +334,14 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
                     {p.source === "applepay" && "  Apple Pay"}
                   </div>
                 </div>
-                <span className="text-sm font-semibold">${p.amount.toFixed(2)}</span>
+                <span className="text-right">
+                  <span className="text-sm font-semibold">${p.amount.toFixed(2)}</span>
+                  {p.originalCurrency && p.originalAmount != null && (
+                    <span className="block text-xs text-gray-400">
+                      {formatOriginal(p.originalAmount, p.originalCurrency)}
+                    </span>
+                  )}
+                </span>
                 {deletable && (
                   <button
                     onClick={() => remove(p.id)}

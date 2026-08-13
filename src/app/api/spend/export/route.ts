@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isParent } from "@/lib/parentAuth";
+import { formatOriginal } from "@/lib/currency";
 
 // CSV export of purchases — open it in Excel/Numbers/Sheets and sort by the
 // Child or Category column. Supports the same filters as the dashboard.
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
   });
 
   const csv = [
-    "Date,Time,Child,Store,Item,Category,Amount,Source",
+    "Date,Time,Child,Store,Item,Category,Amount (USD),Original,Source",
     ...purchases.map((p) => {
       const d = p.purchasedAt;
       return [
@@ -38,6 +39,9 @@ export async function GET(request: NextRequest) {
         q(p.description),
         q(p.category),
         p.amount.toFixed(2),
+        p.originalCurrency && p.originalAmount != null
+          ? q(formatOriginal(p.originalAmount, p.originalCurrency))
+          : "",
         p.source === "applepay" ? "Apple Pay" : "Manual",
       ].join(",");
     }),

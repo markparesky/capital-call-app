@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isParent } from "@/lib/parentAuth";
 import { categorize, isCategory } from "@/lib/categorize";
+import { convertToUSD, isCurrency } from "@/lib/currency";
 
 // GET: with a kid token → that kid's purchases (for the kid's page).
 //      with the parent cookie → all purchases, filterable by kid/category/date.
@@ -51,11 +52,18 @@ export async function POST(request: NextRequest) {
   if (!kid) return NextResponse.json({ error: "Unknown link" }, { status: 404 });
 
   const merchant = (body.merchant || "").trim();
-  const amount = Math.round(parseFloat(body.amount) * 100) / 100;
+  const entered = Math.round(parseFloat(body.amount) * 100) / 100;
   if (!merchant) return NextResponse.json({ error: "What did you buy / where?" }, { status: 400 });
-  if (!isFinite(amount) || amount <= 0) {
+  if (!isFinite(entered) || entered <= 0) {
     return NextResponse.json({ error: "Enter a valid amount" }, { status: 400 });
   }
+
+  // Foreign-currency entries are converted and stored in USD, keeping the
+  // original amount alongside.
+  const currency = isCurrency(body.currency) ? body.currency : "USD";
+  const amount = currency === "USD" ? entered : await convertToUSD(entered, currency);
+  const originalAmount = currency === "USD" ? null : entered;
+  const originalCurrency = currency === "USD" ? null : currency;
 
   const description = (body.description || "").trim() || null;
   const category =
@@ -69,6 +77,8 @@ export async function POST(request: NextRequest) {
       merchant,
       description,
       amount,
+      originalAmount,
+      originalCurrency,
       category,
       source: body.source === "applepay" ? "applepay" : "manual",
     },

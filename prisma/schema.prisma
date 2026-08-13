@@ -22,7 +22,9 @@ model Purchase {
   kidId       String
   merchant    String
   description String?
-  amount      Float
+  amount      Float // always USD
+  originalAmount   Float? // set when paid in a foreign currency
+  originalCurrency String?
   category    String
   source      String   @default("manual") // "manual" or "applepay"
   purchasedAt DateTime @default(now())

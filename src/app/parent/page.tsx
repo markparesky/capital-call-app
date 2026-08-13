@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CATEGORIES, CATEGORY_EMOJI, type Category } from "@/lib/categorize";
+import { formatOriginal } from "@/lib/currency";
 
 interface Kid {
   id: string;
@@ -16,6 +17,8 @@ interface Purchase {
   merchant: string;
   description: string | null;
   amount: number;
+  originalAmount: number | null;
+  originalCurrency: string | null;
   category: string;
   source: string;
   purchasedAt: string;
@@ -439,7 +442,14 @@ export default function ParentPage() {
                     ))}
                   </select>
                 </td>
-                <td className="px-4 py-3 font-medium whitespace-nowrap">${p.amount.toFixed(2)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <span className="font-medium">${p.amount.toFixed(2)}</span>
+                  {p.originalCurrency && p.originalAmount != null && (
+                    <span className="block text-xs text-gray-400">
+                      {formatOriginal(p.originalAmount, p.originalCurrency)}
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => deletePurchase(p.id)}

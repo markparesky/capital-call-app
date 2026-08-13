@@ -41,6 +41,7 @@ const RULES: [Category, string[]][] = [
     ["whole foods", "trader joe", "kroger", "safeway", "publix", "wegmans",
      "aldi", "heb ", "h-e-b", "albertsons", "vons", "ralphs", "giant",
      "stop & shop", "stop and shop", "food lion", "meijer", "grocery",
+     "woolworths", "coles ", " iga ",
      "market", "instacart", "fresh direct", "freshdirect", "sprouts", "harris teeter"],
   ],
   [
@@ -55,13 +56,14 @@ const RULES: [Category, string[]][] = [
      "poke", "bakery", "donut", "ice cream", "gelato", "acai", "juice",
      "pret a manger", "panda express", "qdoba", "moe's", "jersey mike",
      "jimmy john", "firehouse", "zaxby", "bojangles", "culver", "whataburger",
-     "steak", "bbq", "noodle", " pho ", "thai", "halal", "kebab", "food"],
+     "steak", "bbq", "noodle", " pho ", "thai", "halal", "kebab",
+     "guzman", "hungry jack", "grill'd", "mad mex", "food"],
   ],
   [
     "Rides & Transport",
     ["uber", "lyft", "waymo", "taxi", " cab ", "metro", "mta", "subway ride",
      "bart", "caltrain", "amtrak", "bird", "lime", "scooter", "parking",
-     "spothero", "revel", "citibike", "citi bike", "transit"],
+     "spothero", "revel", "citibike", "citi bike", "transit", " opal ", "myki", "translink"],
   ],
   [
     "Subscriptions",
@@ -85,7 +87,7 @@ const RULES: [Category, string[]][] = [
   [
     "Gas & Car",
     ["shell", "chevron", "exxon", "mobil", "bp ", "sunoco", "citgo", "marathon",
-     "valero", " 76 ", " arco", "speedway", "wawa fuel", " gas", "fuel", "car wash",
+     "valero", " 76 ", " arco", "speedway", "wawa fuel", "caltex", "ampol", " gas", "fuel", "car wash",
      "carwash", "autozone", "jiffy lube", "oil change", "supercharger", "ev charge",
      "chargepoint", "electrify america"],
   ],
@@ -94,14 +96,14 @@ const RULES: [Category, string[]][] = [
     ["cvs", "walgreens", "rite aid", "pharmacy", "sephora", "ulta", "bath & body",
      "bath and body", "salon", "barber", "haircut", "nails", " spa ", "gnc",
      "vitamin", "doctor", "dental", "dentist", "urgent care", "clinic", "gym",
-     "planet fitness", "equinox", "crossfit", "yoga", "pilates"],
+     "planet fitness", "equinox", "crossfit", "yoga", "pilates", "chemist"],
   ],
   [
     "Travel",
     ["airline", "airways", "delta", "united air", "american air", "jetblue",
      "southwest", "spirit air", "frontier air", "alaska air", "hotel", "motel",
      "airbnb", "vrbo", "marriott", "hilton", "hyatt", "expedia", "booking.com",
-     "kayak", "tsa", "airport"],
+     "kayak", "tsa", "airport", "qantas", "jetstar"],
   ],
   [
     "Education",
@@ -119,6 +121,7 @@ const RULES: [Category, string[]][] = [
      "stockx", "goat", "grailed", "nordstrom", "macy", "bloomingdale", "dillard",
      "tj maxx", "tjmaxx", "marshalls", " ross ", "home depot", "lowe's", "lowes",
      "ikea", "dick's", "dicks sporting", "rei", "gap ", "old navy", "banana republic",
+     "kmart", "big w", "jb hi-fi", "jb hifi", "myer", "david jones",
      "victoria's secret", "aerie", "clothing", "apparel", "shoes", " mall"],
   ],
 ];

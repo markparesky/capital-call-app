@@ -12,7 +12,7 @@ type MediaType = (typeof MEDIA_TYPES)[number];
 const EXTRACT_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["merchant", "item", "amount"],
+  required: ["merchant", "item", "amount", "currency"],
   properties: {
     merchant: {
       anyOf: [{ type: "string" }, { type: "null" }],
@@ -27,7 +27,15 @@ const EXTRACT_SCHEMA = {
     amount: {
       anyOf: [{ type: "number" }, { type: "null" }],
       description:
-        "The total amount paid in dollars, after tax and tip. For a receipt, use the final total.",
+        "The total amount paid in the receipt's own currency, after tax and tip. For a receipt, use the final total.",
+    },
+    currency: {
+      anyOf: [
+        { type: "string", enum: ["USD", "AUD", "EUR", "GBP", "CAD", "NZD", "JPY", "MXN"] },
+        { type: "null" },
+      ],
+      description:
+        "The currency the amount is in. Infer from symbols (A$, €, £), the language, tax labels (GST = likely AUD/NZD), or the country of the business. Use USD when there is no evidence otherwise, null only if the amount itself is null.",
     },
   },
 } as const;
@@ -86,7 +94,12 @@ export async function POST(request: NextRequest) {
   }
 
   const textBlock = response.content.find((b) => b.type === "text");
-  let parsed: { merchant: string | null; item: string | null; amount: number | null };
+  let parsed: {
+    merchant: string | null;
+    item: string | null;
+    amount: number | null;
+    currency: string | null;
+  };
   try {
     parsed = JSON.parse(textBlock?.text || "");
   } catch {
@@ -107,5 +120,6 @@ export async function POST(request: NextRequest) {
     merchant: parsed.merchant,
     item: parsed.item,
     amount: parsed.amount != null ? Math.round(parsed.amount * 100) / 100 : null,
+    currency: parsed.currency || "USD",
   });
 }
