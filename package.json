@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Spending accountability app for the kids — log purchases, auto-categorize, export to spreadsheet",
   "private": true,
-  "engines": { "node": "22.x" },
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -11,6 +13,7 @@
     "start": "prisma db push --skip-generate && next start"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
     "@prisma/client": "^6.19.2",
     "@types/node": "^25.3.3",
     "@types/react": "^19.2.14",

@@ -23,6 +23,8 @@ CSV export sortable by child and category. Visibility only — no controls.
 3. Set environment variables on the app service:
    - `DATABASE_URL` — reference the Postgres plugin's URL
    - `PARENT_PASSWORD` — the password for the parent dashboard
+   - `ANTHROPIC_API_KEY` — (optional) enables 📷 receipt/screenshot scanning,
+     from [console.anthropic.com](https://console.anthropic.com) → API Keys
 4. Deploy. The build runs `prisma db push`, which creates the tables automatically.
 
 Works the same on any host that runs Next.js + Postgres (Render, Fly, Vercel + Neon).

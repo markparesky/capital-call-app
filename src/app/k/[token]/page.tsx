@@ -17,6 +17,29 @@ interface Purchase {
 
 const KID_EDIT_WINDOW_MS = 60 * 60 * 1000;
 
+// Downscale client-side so uploads are fast and the image stays small.
+async function toScanPayload(file: File): Promise<{ image: string; mediaType: string }> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Couldn't open that image"));
+      el.src = url;
+    });
+    const maxEdge = 1568;
+    const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    return { image: dataUrl.split(",")[1], mediaType: "image/jpeg" };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export default function KidLogPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [kidName, setKidName] = useState<string | null>(null);
@@ -29,9 +52,11 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
   const [item, setItem] = useState("");
   const [manualCategory, setManualCategory] = useState<Category | null>(null);
   const [saving, setSaving] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState("");
   const amountRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/spend/purchases?token=${encodeURIComponent(token)}`);
@@ -87,6 +112,33 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
     load();
   };
 
+  const scan = async (file: File) => {
+    setError("");
+    setScanning(true);
+    try {
+      const payload = await toScanPayload(file);
+      const res = await fetch("/api/spend/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, ...payload }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Couldn't read that image — try typing it in");
+        return;
+      }
+      if (data.amount != null) setAmount(data.amount.toFixed(2));
+      if (data.merchant) setMerchant(data.merchant);
+      if (data.item) setItem(data.item);
+      setManualCategory(null);
+    } catch {
+      setError("Couldn't read that image — try typing it in");
+    } finally {
+      setScanning(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   const remove = async (id: string) => {
     await fetch(`/api/spend/purchases/${id}?token=${encodeURIComponent(token)}`, {
       method: "DELETE",
@@ -120,6 +172,25 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
       </div>
 
       <form onSubmit={submit} className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 shadow-sm">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) scan(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={scanning}
+          className="w-full py-2.5 border border-dashed border-gray-300 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-60"
+        >
+          {scanning ? "🔍 Reading it…" : "📷 Scan a receipt or screenshot"}
+        </button>
+
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">How much?</label>
           <div className="relative">
