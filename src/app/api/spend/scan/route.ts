@@ -59,14 +59,14 @@ export async function POST(request: NextRequest) {
     : "image/jpeg";
   if (!image) return NextResponse.json({ error: "No image received" }, { status: 400 });
 
+  // Receipt reading is a simple extraction task — Haiku (Anthropic's cheapest
+  // vision model, ~$0.002/scan) handles it well. Set SCAN_MODEL to use a
+  // bigger model without a code change.
   const client = new Anthropic();
-  const response = await client.beta.messages.create({
-    model: "claude-opus-5",
+  const response = await client.messages.create({
+    model: process.env.SCAN_MODEL || "claude-haiku-4-5",
     max_tokens: 1000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
     output_config: {
-      effort: "low",
       format: { type: "json_schema", schema: EXTRACT_SCHEMA },
     },
     messages: [
