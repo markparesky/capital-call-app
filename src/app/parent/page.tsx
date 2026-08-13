@@ -400,7 +400,8 @@ export default function ParentPage() {
             <tr>
               <Th onClick={() => toggleSort("purchasedAt")}>Date{arrow("purchasedAt")}</Th>
               <Th onClick={() => toggleSort("kid")}>Child{arrow("kid")}</Th>
-              <Th onClick={() => toggleSort("merchant")}>Store / Item{arrow("merchant")}</Th>
+              <Th onClick={() => toggleSort("merchant")}>Store{arrow("merchant")}</Th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Item</th>
               <Th onClick={() => toggleSort("category")}>Category{arrow("category")}</Th>
               <Th onClick={() => toggleSort("amount")}>Amount{arrow("amount")}</Th>
               <th className="px-4 py-3" />
@@ -423,10 +424,8 @@ export default function ParentPage() {
                 <td className="px-4 py-3 whitespace-nowrap">
                   {p.kid.emoji} {p.kid.name}
                 </td>
-                <td className="px-4 py-3">
-                  {p.merchant}
-                  {p.description && <span className="text-gray-400"> — {p.description}</span>}
-                </td>
+                <td className="px-4 py-3">{p.merchant}</td>
+                <td className="px-4 py-3 text-gray-600">{p.description || "—"}</td>
                 <td className="px-4 py-3">
                   <select
                     value={p.category}
@@ -454,7 +453,7 @@ export default function ParentPage() {
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                   No purchases yet
                 </td>
               </tr>

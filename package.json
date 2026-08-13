@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "Spending accountability app for the kids — log purchases, auto-categorize, export to spreadsheet",
   "private": true,
+  "engines": { "node": "22.x" },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push && next build",
+    "build": "prisma generate && next build",
     "postinstall": "prisma generate",
-    "start": "next start"
+    "start": "prisma db push --skip-generate && next start"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",

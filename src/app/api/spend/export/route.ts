@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   });
 
   const csv = [
-    "Date,Time,Child,Store / Item,Notes,Category,Amount,Source",
+    "Date,Time,Child,Store,Item,Category,Amount,Source",
     ...purchases.map((p) => {
       const d = p.purchasedAt;
       return [

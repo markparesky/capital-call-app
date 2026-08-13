@@ -26,6 +26,7 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
 
   const [amount, setAmount] = useState("");
   const [merchant, setMerchant] = useState("");
+  const [item, setItem] = useState("");
   const [manualCategory, setManualCategory] = useState<Category | null>(null);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
@@ -49,8 +50,9 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
   }, [load]);
 
   const autoCategory = useMemo(
-    () => (merchant.trim() ? categorize(merchant) : null),
-    [merchant]
+    () =>
+      merchant.trim() || item.trim() ? categorize(`${merchant} ${item}`) : null,
+    [merchant, item]
   );
   const category = manualCategory || autoCategory;
 
@@ -64,6 +66,7 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
       body: JSON.stringify({
         token,
         merchant,
+        description: item,
         amount,
         category: manualCategory || undefined,
       }),
@@ -76,6 +79,7 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
     }
     setAmount("");
     setMerchant("");
+    setItem("");
     setManualCategory(null);
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2500);
@@ -134,10 +138,10 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">Where, or what?</label>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Where?</label>
           <input
             type="text"
-            placeholder="Chipotle, Uber, Amazon…"
+            placeholder="Starbucks, Uber, Amazon…"
             value={merchant}
             onChange={(e) => {
               setMerchant(e.target.value);
@@ -145,6 +149,20 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
             }}
             className="w-full px-4 py-3 text-lg border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">What did you get?</label>
+          <input
+            type="text"
+            placeholder="Coffee, shoes, ride home…"
+            value={item}
+            onChange={(e) => {
+              setItem(e.target.value);
+              setManualCategory(null);
+            }}
+            className="w-full px-4 py-3 text-lg border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -198,7 +216,12 @@ export default function KidLogPage({ params }: { params: Promise<{ token: string
               <li key={p.id} className="py-2.5 flex items-center gap-3">
                 <span className="text-xl">{CATEGORY_EMOJI[p.category as Category] || "❓"}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{p.merchant}</div>
+                  <div className="text-sm font-medium truncate">
+                    {p.merchant}
+                    {p.description && (
+                      <span className="text-gray-400 font-normal"> · {p.description}</span>
+                    )}
+                  </div>
                   <div className="text-xs text-gray-400">
                     {new Date(p.purchasedAt).toLocaleDateString(undefined, {
                       month: "short",
